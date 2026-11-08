@@ -18,7 +18,9 @@ preferences = [("Liam", "Chloe")]
 ###############################
 
 # Choose the event size
-print("\nEVENT SEATING PLANNER")
+print("\n================================")
+print("EVENT SEATING PLANNER")
+print("================================")
 print("1. Demo - 6 guests")
 print("2. Small - 12 guests")
 print("3. Medium - 24 guests")
@@ -57,7 +59,7 @@ if num_guests is not None:
     for i in range(1, num_guests + 1):
         guests.append("Guest" + str(i))
 
-    print("Guests:", guests)
+    # print("Guests:", guests)
     print("Total guests:", len(guests))
 
     # Set the number of tables
@@ -85,7 +87,9 @@ if num_guests is not None:
 ###############################
 
 # Choose the constraint level
-print("\nCONSTRAINT LEVEL")
+print("\n================================")
+print("CONSTRAINT LEVEL")
+print("================================")
 print("1. Low")
 print("2. Medium")
 print("3. High")
@@ -148,7 +152,9 @@ print("Fixed constraints:", num_fixed)
 ###############################
 
 # Choose the algorithm
-print("\nALGORITHM")
+print("\n================================")
+print("ALGORITHM")
+print("================================")
 print("1. Greedy First-Fit")
 print("2. Backtracking")
 print("3. MRV + Forward Checking")
@@ -193,7 +199,7 @@ for guest in guests:
     if table > len(tables):
         table = 1
 
-print("Reference assignment:", reference_assignment)
+# print("Reference assignment:", reference_assignment)
 
 # We use a random seed to have the same choice while running the program again
 random.seed(42)
@@ -226,7 +232,7 @@ while len(together) < num_together:
     if (guest1, guest2) not in together and (guest2, guest1) not in together:
         together.append((guest1, guest2))
 
-print("Together:", together)
+# print("Together:", together)
 print("Total together constraints:", len(together))
 
 
@@ -257,7 +263,7 @@ while len(apart) < num_apart:
     if (guest1, guest2) not in apart and (guest2, guest1) not in apart:
         apart.append((guest1, guest2))
 
-print("Apart:", apart)
+# print("Apart:", apart)
 print("Total apart constraints:", len(apart))
 
 
@@ -281,7 +287,7 @@ while len(fixed) < num_fixed:
     if guest not in fixed:
         fixed[guest] = table
 
-print("Fixed:", fixed)
+# print("Fixed:", fixed)
 print("Total fixed constraints:", len(fixed))
 
 
@@ -314,5 +320,51 @@ while len(preferences) < num_preferences:
 
         preferences.append(pair)
 
-print("Preferences:", preferences)
+# print("Preferences:", preferences)
 print("Total preferences:", len(preferences))
+
+
+
+#######################
+# SCENARIO SUMMARY
+#######################
+
+# Show the scenario we generated
+print("\n================================")
+print("EVENT DETAILS")
+print("================================")
+
+print("Guests:", num_guests)
+print("Tables:", num_tables)
+print("Capacity per table:", capacity)
+print("Constraint level:", constraint_level)
+
+print("\nHARD CONSTRAINTS")
+print("Together:", together)
+print("Apart:", apart)
+print("Fixed:", fixed)
+
+print("\nSOFT PREFERENCES")
+print("Preferences:", preferences)
+
+
+
+#######################
+# GREEDY FIRST-FIT
+#######################
+
+# Run Greedy if the user selected it
+if algorithm == "greedy":
+
+    # Try to assign guests using the generated constraints
+    assignment, attempts = greedy_first_fit(
+    guests, tables, capacity, together, apart, fixed
+    )
+
+    print("Assignments tried:", attempts)
+
+    # Show the result
+    if assignment is None:
+        print("Greedy could not find a valid assignment.")
+    else:
+        print("Greedy assignment:", assignment)
