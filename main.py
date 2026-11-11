@@ -1,4 +1,5 @@
 import random
+import time
 
 from constraints import is_valid, count_preferences
 from greedy import greedy_first_fit
@@ -354,21 +355,54 @@ print("Preferences:", preferences)
 # GREEDY FIRST-FIT
 #######################
 
-# Run Greedy if the user selected it
-if algorithm == "greedy":
+# Run Greedy if selected or if we want to compare
+if algorithm == "greedy" or algorithm == "compare":
 
-    # Try to assign guests using the generated constraints
+    print("\n================================")
+    print("GREEDY FIRST-FIT")
+    print("================================")
+
+    # Start the timer
+    start = time.perf_counter()
+
+    # Run Greedy
     assignment, attempts = greedy_first_fit(
-    guests, tables, capacity, together, apart, fixed
+        guests, tables, capacity, together, apart, fixed
     )
 
-    print("Assignments tried:", attempts)
+    # Calculate the execution time
+    elapsed = time.perf_counter() - start
 
-    # Show the result
+    print("Assignments tried:", attempts)
+    print("Execution time:", round(elapsed, 6), "seconds")
+
+    # Check if Greedy found a solution
     if assignment is None:
-        print("Greedy could not find a valid assignment.")
+        print("No valid assignment found.")
+
     else:
-        print("Greedy assignment:", assignment)
+        # Check the final assignment
+        valid = len(assignment) == len(guests) and is_valid(
+            assignment, capacity, together, apart, fixed
+        )
+        print("Valid assignment:", valid)
+
+        # Count the satisfied preferences
+        score = count_preferences(assignment, preferences)
+        print("Preferences satisfied:", score, "/", len(preferences))
+
+        # Show the guests at each table
+        print("\nSEATING ARRANGEMENT")
+
+        for table in tables:
+            table_guests = []
+
+            for guest in guests:
+                if assignment[guest] == table:
+                    table_guests.append(guest)
+
+            print("Table", table, ":", ", ".join(table_guests))
+            print("Seats used:", len(table_guests), "/", capacity)
 
 
 
@@ -377,17 +411,54 @@ if algorithm == "greedy":
 #######################
 
 # Run Backtracking if the user selected it
-if algorithm == "backtracking":
+if algorithm == "backtracking" or algorithm == "compare":
 
-    # Try to assign guests using the generated constraints
-    assignment, attempts = backtracking_search(
-    guests, tables, capacity, together, apart, fixed
+    print("\n================================")
+    print("BACKTRACKING")
+    print("================================")
+
+   # Start the timer
+    start = time.perf_counter()
+
+    # Run Backtracking
+    assignment, attempts, timed_out = backtracking_search(
+        guests, tables, capacity, together, apart, fixed
     )
 
-    print("Assignments tried:", attempts)
+    # Calculate the execution time
+    elapsed = time.perf_counter() - start
 
-    # Show the result
-    if assignment is None:
-        print("Backtracking could not find a valid assignment.")
+    print("Assignments tried:", attempts)
+    print("Execution time:", round(elapsed, 6), "seconds")
+
+    # Check why the search stopped
+    if timed_out:
+       print("Time limit reached (10 seconds).")
+
+    # Check if Backtracking found a solution
+    elif assignment is None:
+        print("No valid assignment found.")
+
     else:
-        print("Backtracking assignment:", assignment)
+        # Check the final assignment
+        valid = len(assignment) == len(guests) and is_valid(
+            assignment, capacity, together, apart, fixed
+        )
+        print("Valid assignment:", valid)
+
+        # Count the satisfied preferences
+        score = count_preferences(assignment, preferences)
+        print("Preferences satisfied:", score, "/", len(preferences))
+
+        # Show the guests at each table
+        print("\nSEATING ARRANGEMENT")
+
+        for table in tables:
+            table_guests = []
+
+            for guest in guests:
+                if assignment[guest] == table:
+                    table_guests.append(guest)
+
+            print("Table", table, ":", ", ".join(table_guests))
+            print("Seats used:", len(table_guests), "/", capacity)

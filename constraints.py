@@ -1,33 +1,38 @@
 
 def is_valid(assignment, capacity, together, apart, fixed):
 
-    # Table capacity
-    assigned_tables = list(assignment.values())
-
-    for table in assigned_tables:
-        if assigned_tables.count(table) > capacity:
-            return False
-
-    # Guests who must sit together
-    for guest1, guest2 in together:
-        if guest1 in assignment and guest2 in assignment:
-            if assignment[guest1] != assignment[guest2]:
-                return False
-
-    # Guests who cannot sit together
-    for guest1, guest2 in apart:
-        if guest1 in assignment and guest2 in assignment:
-            if assignment[guest1] == assignment[guest2]:
-                return False
-
-    # Fixed table assignments
+    # Check fixed seats first
     for guest, table in fixed.items():
         if guest in assignment:
             if assignment[guest] != table:
                 return False
 
-    return True
+    # Check guests who must sit together
+    for guest1, guest2 in together:
+        if guest1 in assignment and guest2 in assignment:
+            if assignment[guest1] != assignment[guest2]:
+                return False
 
+    # Check guests who cannot sit together
+    for guest1, guest2 in apart:
+        if guest1 in assignment and guest2 in assignment:
+            if assignment[guest1] == assignment[guest2]:
+                return False
+
+    # Count how many guests are at each table
+    table_counts = {}
+
+    for table in assignment.values():
+        if table not in table_counts:
+            table_counts[table] = 0
+
+        table_counts[table] += 1
+
+        # Stop if the table is full
+        if table_counts[table] > capacity:
+            return False
+
+    return True
 
 
 def count_preferences(assignment, preferences):

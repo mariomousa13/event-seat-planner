@@ -1,5 +1,5 @@
 
-from constraints import is_valid
+from constraints import is_valid, count_preferences
 
 
 def greedy_first_fit(guests, tables, capacity, together, apart, fixed):
