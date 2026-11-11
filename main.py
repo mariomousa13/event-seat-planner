@@ -2,6 +2,7 @@ import random
 
 from constraints import is_valid, count_preferences
 from greedy import greedy_first_fit
+from backtracking import backtracking_search
 
 # Hard constraints
 together = [("James", "Emma")]
@@ -368,3 +369,25 @@ if algorithm == "greedy":
         print("Greedy could not find a valid assignment.")
     else:
         print("Greedy assignment:", assignment)
+
+
+
+#######################
+# BACKTRACKING
+#######################
+
+# Run Backtracking if the user selected it
+if algorithm == "backtracking":
+
+    # Try to assign guests using the generated constraints
+    assignment, attempts = backtracking_search(
+    guests, tables, capacity, together, apart, fixed
+    )
+
+    print("Assignments tried:", attempts)
+
+    # Show the result
+    if assignment is None:
+        print("Backtracking could not find a valid assignment.")
+    else:
+        print("Backtracking assignment:", assignment)
