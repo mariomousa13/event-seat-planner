@@ -373,6 +373,20 @@ if algorithm == "greedy" or algorithm == "compare":
     # Calculate the execution time
     elapsed = time.perf_counter() - start
 
+    # We have to save the results for the comparison table
+    greedy_attempts = attempts
+    greedy_time = elapsed
+
+    if assignment is None:
+        greedy_status = "Failed"
+        greedy_preferences = "-"
+    else:
+        greedy_status = "Solved"
+        score = count_preferences(assignment, preferences)
+        greedy_preferences = str(score) + "/" + str(len(preferences))
+
+
+
     print("Assignments tried:", attempts)
     print("Execution time:", round(elapsed, 6), "seconds")
 
@@ -428,6 +442,22 @@ if algorithm == "backtracking" or algorithm == "compare":
     # Calculate the execution time
     elapsed = time.perf_counter() - start
 
+    # We have to save the result for the comparison
+    backtracking_attempts = attempts
+    backtracking_time = elapsed
+
+    if timed_out:
+        backtracking_status = "Timeout"
+        backtracking_preferences = "-"
+    elif assignment is None:
+        backtracking_status = "No solution"
+        backtracking_preferences = "-"
+    else:
+        backtracking_status = "Solved"
+        score = count_preferences(assignment, preferences)
+        backtracking_preferences = str(score) + "/" + str(len(preferences))
+
+
     print("Assignments tried:", attempts)
     print("Execution time:", round(elapsed, 6), "seconds")
 
@@ -462,3 +492,41 @@ if algorithm == "backtracking" or algorithm == "compare":
 
             print("Table", table, ":", ", ".join(table_guests))
             print("Seats used:", len(table_guests), "/", capacity)
+
+
+#######################
+# ALGORITHM COMPARISON
+#######################
+
+# Show the comparison if both algorithms were selected
+if algorithm == "compare":
+
+    print("\n============================================================")
+    print("ALGORITHM COMPARISON")
+    print("============================================================")
+
+     # Show which scenario we are comparing
+    print("Guests:", num_guests, "| Constraint level:", constraint_level)
+    print()
+
+    # We use 23 and 17 to leave enough space between columns
+    # For example, "Result" is shorter than "Assignments tried"
+    # The < means the text starts on the left side of that space
+    # These numbers are not fixed rules, we just chose what looks good
+    print(f"{'Metric':<23}{'Greedy':<17}{'Backtracking'}")
+    print("-" * 60)
+
+    # Show if each algorithm found a solution
+    print(f"{'Result':<23}{greedy_status:<17}{backtracking_status}")
+
+    # Show how many assignments each algorithm tried
+    print(f"{'Assignments tried':<23}{greedy_attempts:<17}{backtracking_attempts}")
+
+    # Compare the execution times
+    # .6f means we show 6 decimal places
+    # For example, 0.000073 instead of 0.0001
+    print(f"{'Execution time (s)':<23}{greedy_time:<17.6f}{backtracking_time:.6f}")
+
+    # Show how many preferences each algorithm satisfied
+    # For example, 2/4 means 2 out of 4 preferences were satisfied
+    print(f"{'Preferences':<23}{greedy_preferences:<17}{backtracking_preferences}")
