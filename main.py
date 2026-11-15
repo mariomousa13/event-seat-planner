@@ -1,5 +1,6 @@
 import random
 import time
+from mrv_fc import mrv_fc_search
 
 from constraints import is_valid, count_preferences
 from greedy import greedy_first_fit
@@ -494,39 +495,115 @@ if algorithm == "backtracking" or algorithm == "compare":
             print("Seats used:", len(table_guests), "/", capacity)
 
 
+
+
+#######################
+# MRV + FORWARD CHECKING
+#######################
+
+# Run MRV + FC if selected, or if we want to compare
+if algorithm == "mrv_fc" or algorithm == "compare":
+
+    print("\n================================")
+    print("MRV + FORWARD CHECKING")
+    print("================================")
+
+    # Start the timer
+    start = time.perf_counter()
+
+    # Run the algorithm
+    assignment, attempts, timed_out = mrv_fc_search(
+        guests, tables, capacity, together, apart, fixed
+    )
+
+    # Calculate how long it took
+    elapsed = time.perf_counter() - start
+
+    # Save the results for Compare All
+    mrv_attempts = attempts
+    mrv_time = elapsed
+
+    print("Assignments tried:", attempts)
+    print("Execution time:", round(elapsed, 6), "seconds")
+
+    # Check if the algorithm ran out of time
+    if timed_out:
+        mrv_status = "Timeout"
+        mrv_preferences = "-"
+        print("Time limit reached (10 seconds).")
+
+    # Check if it finished without finding a solution
+    elif assignment is None:
+        mrv_status = "No solution"
+        mrv_preferences = "-"
+        print("No valid assignment exists.")
+
+    else:
+        mrv_status = "Solved"
+
+        # Check if all guests have a table and the rules are followed
+        valid = len(assignment) == len(guests) and is_valid(
+            assignment, capacity, together, apart, fixed
+        )
+
+        print("Valid assignment:", valid)
+
+        # Count how many preferences we satisfied
+        score = count_preferences(assignment, preferences)
+        mrv_preferences = str(score) + "/" + str(len(preferences))
+
+        print("Preferences satisfied:", score, "/", len(preferences))
+
+        # Show who is sitting at each table
+        print("\nSEATING ARRANGEMENT")
+
+        for table in tables:
+            table_guests = []
+
+            for guest in guests:
+                if assignment[guest] == table:
+                    table_guests.append(guest)
+
+            print("Table", table, ":", ", ".join(table_guests))
+            print("Seats used:", len(table_guests), "/", capacity)
+
+
+
 #######################
 # ALGORITHM COMPARISON
 #######################
 
-# Show the comparison if both algorithms were selected
+# Only show this table if we selected Compare All
 if algorithm == "compare":
 
-    print("\n============================================================")
+    # Print the title
+    print("\n================================================================================")
     print("ALGORITHM COMPARISON")
-    print("============================================================")
+    print("================================================================================")
 
-     # Show which scenario we are comparing
+    # Show which scenario we are comparing
     print("Guests:", num_guests, "| Constraint level:", constraint_level)
     print()
 
-    # We use 23 and 17 to leave enough space between columns
-    # For example, "Result" is shorter than "Assignments tried"
-    # The < means the text starts on the left side of that space
-    # These numbers are not fixed rules, we just chose what looks good
-    print(f"{'Metric':<23}{'Greedy':<17}{'Backtracking'}")
-    print("-" * 60)
+    # We leave enough space for each column
+    # 23 is for the metric names, like "Assignments tried"
+    # 17 is for Greedy and 18 is for Backtracking
+    # The < means the text is aligned to the left
+    # We chose these numbers so the columns do not overlap
+    print(f"{'Metric':<23}{'Greedy':<17}{'Backtracking':<18}{'MRV + FC'}")
+    print("-" * 80)
 
-    # Show if each algorithm found a solution
-    print(f"{'Result':<23}{greedy_status:<17}{backtracking_status}")
+    # Check which algorithms found a solution
+    print(f"{'Result':<23}{greedy_status:<17}{backtracking_status:<18}{mrv_status}")
 
-    # Show how many assignments each algorithm tried
-    print(f"{'Assignments tried':<23}{greedy_attempts:<17}{backtracking_attempts}")
+    # Compare how many assignments each algorithm tried
+    print(f"{'Assignments tried':<23}{greedy_attempts:<17}{backtracking_attempts:<18}{mrv_attempts}")
 
-    # Compare the execution times
-    # .6f means we show 6 decimal places
-    # For example, 0.000073 instead of 0.0001
-    print(f"{'Execution time (s)':<23}{greedy_time:<17.6f}{backtracking_time:.6f}")
+    # Show how long each algorithm took
+    # .6f means 6 decimal places, for example 0.003123
+    # This helps us see the difference when algorithms are very fast
+    print(f"{'Execution time (s)':<23}{greedy_time:<17.6f}{backtracking_time:<18.6f}{mrv_time:.6f}")
 
-    # Show how many preferences each algorithm satisfied
-    # For example, 2/4 means 2 out of 4 preferences were satisfied
-    print(f"{'Preferences':<23}{greedy_preferences:<17}{backtracking_preferences}")
+    # Compare how many preferences each algorithm satisfied
+    # For example, 2/4 means 2 out of 4 preferences
+    print(f"{'Preferences':<23}{greedy_preferences:<17}{backtracking_preferences:<18}{mrv_preferences}")
