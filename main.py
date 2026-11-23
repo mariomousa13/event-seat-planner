@@ -2,7 +2,7 @@ import time
 
 from scenarios import generate_scenario
 from constraints import is_valid, count_preferences
-from greedy import greedy_first_fit
+from greedy import greedy_first_fit, greedy_optimize
 from backtracking import backtracking_search
 from mrv_fc import mrv_fc_search
 
@@ -123,6 +123,36 @@ if algorithm is None:
 
 print("Selected algorithm:", algorithm)
 
+###############################
+# SEARCH MODE
+###############################
+
+# Choose how the algorithms should search
+print("\n================================")
+print("SEARCH MODE")
+print("================================")
+print("1. Find First Valid Solution")
+print("2. Optimize Preferences")
+
+mode_choice = input("Choose the search mode: ")
+
+# Save the selected search mode
+if mode_choice == "1":
+    search_mode = "first_valid"
+
+elif mode_choice == "2":
+    search_mode = "optimize"
+
+else:
+    search_mode = None
+    print("Invalid option")
+
+# Check the selected search mode
+if search_mode is None:
+    exit()
+
+print("Selected search mode:", search_mode)
+
 
 ###############################
 # GENERATE THE SCENARIO
@@ -174,6 +204,7 @@ print("Tables:", num_tables)
 print("Capacity per table:", capacity)
 print("Constraint level:", constraint_level)
 print("Random seed:", seed)
+print("Search mode:", search_mode)
 
 print("\nHARD CONSTRAINTS")
 print("Together:", together)
@@ -193,46 +224,86 @@ print("Preferences:", preferences)
 if algorithm == "greedy" or algorithm == "compare":
 
     print("\n================================")
-    print("GREEDY FIRST-FIT")
+
+    if search_mode == "first_valid":
+        print("GREEDY FIRST-FIT")
+    else:
+        print("GREEDY OPTIMIZE (RANDOM RESTARTS)")
+
     print("================================")
 
     # Start the timer
     start = time.perf_counter()
 
-    # Run Greedy
-    assignment, attempts = greedy_first_fit(
-        guests, tables, capacity, together, apart, fixed
-    )
+    # Run Greedy with the selected search mode
+    if search_mode == "first_valid":
 
+        assignment, attempts = greedy_first_fit(
+            guests, tables, capacity, together, apart, fixed
+        )
+
+    else:
+
+        assignment, attempts, restarts, timed_out = greedy_optimize(
+            guests, tables, capacity, together, apart, fixed,
+            preferences, time_limit=10, seed=seed
+        )
+
+    
     # Calculate the execution time
     elapsed = time.perf_counter() - start
 
-    # We have to save the results for the comparison table
+    # Save the results for the comparison table
     greedy_attempts = attempts
     greedy_time = elapsed
 
+    # Check if Greedy found a solution
     if assignment is None:
-        greedy_status = "Failed"
+
+        if search_mode == "optimize" and timed_out:
+            greedy_status = "Timeout"
+        else:
+            greedy_status = "Failed"
+
         greedy_preferences = "-"
+
     else:
-        greedy_status = "Solved"
+
+        # We found a solution, even if the time limit was reached
+        if search_mode == "optimize" and timed_out:
+            greedy_status = "Solved (limit)"
+        else:
+            greedy_status = "Solved"
+
+        # Count the satisfied preferences
         score = count_preferences(assignment, preferences)
         greedy_preferences = str(score) + "/" + str(len(preferences))
 
-
-
+    # Show the search results
     print("Assignments tried:", attempts)
-    print("Execution time:", round(elapsed, 6), "seconds")
 
-    # Check if Greedy found a solution
+    # Show the number of seating plans started
+    if search_mode == "optimize":
+        print("Seating plans started:", restarts)
+
+    print("Execution time:", round(elapsed, 6), "seconds")
+    print("Result:", greedy_status)
+
+    # Show a message if we reached the time limit
+    if search_mode == "optimize" and timed_out:
+        print("Time limit reached (10 seconds).")
+
+    # Show the final seating plan
     if assignment is None:
         print("No valid assignment found.")
 
     else:
-        # Check the final assignment
+
+        # Check that all guests have a table and follow the rules
         valid = len(assignment) == len(guests) and is_valid(
             assignment, capacity, together, apart, fixed
         )
+
         print("Valid assignment:", valid)
 
         # Count the satisfied preferences
@@ -251,6 +322,7 @@ if algorithm == "greedy" or algorithm == "compare":
 
             print("Table", table, ":", ", ".join(table_guests))
             print("Seats used:", len(table_guests), "/", capacity)
+
 
 
 
@@ -262,15 +334,21 @@ if algorithm == "greedy" or algorithm == "compare":
 if algorithm == "backtracking" or algorithm == "compare":
 
     print("\n================================")
-    print("BACKTRACKING")
+
+    if search_mode == "first_valid":
+        print("BACKTRACKING - FIRST VALID")
+    else:
+        print("BACKTRACKING - OPTIMIZE PREFERENCES")
+
     print("================================")
 
    # Start the timer
     start = time.perf_counter()
 
-    # Run Backtracking
+    # Run Backtracking with the selected search mode
     assignment, attempts, timed_out = backtracking_search(
-        guests, tables, capacity, together, apart, fixed
+        guests, tables, capacity, together, apart, fixed,
+        search_mode=search_mode, preferences=preferences
     )
 
     # Calculate the execution time
@@ -280,27 +358,39 @@ if algorithm == "backtracking" or algorithm == "compare":
     backtracking_attempts = attempts
     backtracking_time = elapsed
 
-    if timed_out:
-        backtracking_status = "Timeout"
+    # Check if we found a solution
+    if assignment is None:
+
+        if timed_out:
+            backtracking_status = "Timeout"
+
+        else:
+            backtracking_status = "No solution"
+
         backtracking_preferences = "-"
-    elif assignment is None:
-        backtracking_status = "No solution"
-        backtracking_preferences = "-"
-    else:
-        backtracking_status = "Solved"
+
+    else:   
+
+        # We found a valid solution, even if we reached the time limit
+        if timed_out:
+            backtracking_status = "Solved (limit)"
+
+        else:
+            backtracking_status = "Solved"
+
+        # Count how many preferences we satisfied
         score = count_preferences(assignment, preferences)
         backtracking_preferences = str(score) + "/" + str(len(preferences))
-
 
     print("Assignments tried:", attempts)
     print("Execution time:", round(elapsed, 6), "seconds")
 
-    # Check why the search stopped
+    # Show a message if the time limit was reached
     if timed_out:
         print("Time limit reached (10 seconds).")
 
     # Check if Backtracking found a solution
-    elif assignment is None:
+    if assignment is None:
         print("No valid assignment found.")
 
     else:
@@ -326,6 +416,7 @@ if algorithm == "backtracking" or algorithm == "compare":
 
             print("Table", table, ":", ", ".join(table_guests))
             print("Seats used:", len(table_guests), "/", capacity)
+
 
 
 
@@ -338,15 +429,21 @@ if algorithm == "backtracking" or algorithm == "compare":
 if algorithm == "mrv_fc" or algorithm == "compare":
 
     print("\n================================")
-    print("MRV + FORWARD CHECKING")
+
+    if search_mode == "first_valid":
+        print("MRV + FC - FIRST VALID")
+    else:
+        print("MRV + FC - OPTIMIZE PREFERENCES")
+
     print("================================")
 
     # Start the timer
     start = time.perf_counter()
 
-    # Run the algorithm
+    # Run MRV + FC with the selected search mode
     assignment, attempts, timed_out = mrv_fc_search(
-        guests, tables, capacity, together, apart, fixed
+        guests, tables, capacity, together, apart, fixed,
+        search_mode=search_mode, preferences=preferences
     )
 
     # Calculate how long it took
@@ -356,23 +453,43 @@ if algorithm == "mrv_fc" or algorithm == "compare":
     mrv_attempts = attempts
     mrv_time = elapsed
 
-    print("Assignments tried:", attempts)
-    print("Execution time:", round(elapsed, 6), "seconds")
+    # Check if we found a solution
+    if assignment is None:
 
-    # Check if the algorithm ran out of time
-    if timed_out:
-        mrv_status = "Timeout"
-        mrv_preferences = "-"
-        print("Time limit reached (10 seconds).")
+        # Check if we ran out of time
+        if timed_out:
+            mrv_status = "Timeout"
+        else:
+            mrv_status = "No solution"
 
-    # Check if it finished without finding a solution
-    elif assignment is None:
-        mrv_status = "No solution"
         mrv_preferences = "-"
-        print("No valid assignment exists.")
 
     else:
-        mrv_status = "Solved"
+
+        # We found a solution, even if we reached the time limit
+        if timed_out:
+            mrv_status = "Solved (limit)"
+        else:
+            mrv_status = "Solved"
+
+        # Count how many preferences we satisfied
+        score = count_preferences(assignment, preferences)
+        mrv_preferences = str(score) + "/" + str(len(preferences))
+
+    # Show the search results
+    print("Assignments tried:", attempts)
+    print("Execution time:", round(elapsed, 6), "seconds")
+    print("Result:", mrv_status)
+
+    # Show a message if we reached the time limit
+    if timed_out:
+        print("Time limit reached (10 seconds).")
+
+    # Check if MRV + FC found a solution
+    if assignment is None:
+        print("No valid assignment found.")
+
+    else:
 
         # Check if all guests have a table and the rules are followed
         valid = len(assignment) == len(guests) and is_valid(
@@ -381,10 +498,8 @@ if algorithm == "mrv_fc" or algorithm == "compare":
 
         print("Valid assignment:", valid)
 
-        # Count how many preferences we satisfied
+        # Show how many preferences we satisfied
         score = count_preferences(assignment, preferences)
-        mrv_preferences = str(score) + "/" + str(len(preferences))
-
         print("Preferences satisfied:", score, "/", len(preferences))
 
         # Show who is sitting at each table
@@ -402,6 +517,7 @@ if algorithm == "mrv_fc" or algorithm == "compare":
 
 
 
+
 #######################
 # ALGORITHM COMPARISON
 #######################
@@ -416,6 +532,7 @@ if algorithm == "compare":
 
     # Show which scenario we are comparing
     print("Guests:", num_guests, "| Constraint level:", constraint_level)
+    print("Search mode:", search_mode)
     print()
 
     # We leave enough space for each column
